@@ -1,0 +1,670 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata — Codebase Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<style>
+/* ============ design tokens ============ */
+:root{
+  --bg:#07080b;
+  --bg-2:#0a0c11;
+  --panel:rgba(255,255,255,.035);
+  --panel-2:rgba(255,255,255,.055);
+  --line:rgba(255,255,255,.09);
+  --line-2:rgba(255,255,255,.14);
+  --fg:#eef0f5;
+  --muted:#8b93a7;
+  --dim:#5d6478;
+  --violet:#7c5cff;
+  --violet-2:#a78bfa;
+  --cyan:#22d3ee;
+  --ok:#34d399;
+  --warn:#fbbf24;
+  --err:#f87171;
+  --r:14px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ============ cinematic background ============ */
+.bg{position:fixed; inset:0; z-index:-2; overflow:hidden; pointer-events:none}
+.bg::before{
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(720px 480px at 18% -8%, rgba(124,92,255,.20), transparent 62%),
+    radial-gradient(680px 460px at 88% 6%, rgba(34,211,238,.11), transparent 60%),
+    radial-gradient(900px 700px at 50% 108%, rgba(124,92,255,.10), transparent 66%);
+}
+.grid{
+  position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.32;
+  background-image:
+    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(circle at 50% 24%, #000 8%, transparent 72%);
+  -webkit-mask-image:radial-gradient(circle at 50% 24%, #000 8%, transparent 72%);
+}
+
+/* ============ navbar ============ */
+nav{
+  position:fixed; top:18px; left:50%; transform:translateX(-50%);
+  z-index:60; display:flex; align-items:center; gap:26px;
+  padding:9px 10px 9px 20px; border-radius:999px;
+  background:rgba(12,14,20,.72); border:1px solid var(--line);
+  backdrop-filter:blur(20px) saturate(150%);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  box-shadow:0 8px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+  max-width:calc(100vw - 28px);
+}
+.brand{display:flex; align-items:center; gap:10px; font-weight:650; letter-spacing:-.015em; white-space:nowrap}
+.mark{width:19px; height:19px; flex:none; display:block}
+.navlinks{display:flex; gap:4px; align-items:center}
+.navlinks button{
+  background:none; border:0; color:var(--muted); font:inherit; font-size:13.5px;
+  padding:7px 14px; border-radius:999px; cursor:pointer;
+  transition:color .22s var(--ease), background .22s var(--ease);
+  white-space:nowrap;
+}
+.navlinks button:hover{color:var(--fg); background:rgba(255,255,255,.06)}
+.navlinks button.on{color:var(--fg); background:rgba(124,92,255,.20)}
+
+/* ============ layout ============ */
+main{max-width:1140px; margin:0 auto; padding:132px 24px 96px}
+.hidden{display:none !important}
+
+/* ============ hero ============ */
+.hero{text-align:center; padding:34px 0 20px}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:9px; margin-bottom:26px;
+  padding:6px 15px 6px 11px; border-radius:999px; font-size:12.5px; color:var(--muted);
+  background:var(--panel); border:1px solid var(--line);
+  backdrop-filter:blur(12px);
+}
+.dot{width:6px; height:6px; border-radius:50%; background:var(--cyan); flex:none;
+     box-shadow:0 0 12px var(--cyan); animation:pulse 2.6s var(--ease) infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+h1{
+  margin:0 0 18px; font-size:clamp(38px,6.4vw,68px); line-height:1.04;
+  letter-spacing:-.038em; font-weight:640;
+  background:linear-gradient(178deg,#fff 32%,#9aa2b8 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.sub{margin:0 auto 40px; max-width:560px; color:var(--muted); font-size:16.5px; line-height:1.62}
+
+/* ============ url input ============ */
+.searchbar{
+  display:flex; gap:8px; align-items:center; max-width:660px; margin:0 auto;
+  padding:7px 7px 7px 8px; border-radius:999px;
+  background:rgba(255,255,255,.045); border:1px solid var(--line);
+  backdrop-filter:blur(16px);
+  transition:border-color .28s var(--ease), box-shadow .28s var(--ease);
+}
+.searchbar:focus-within{
+  border-color:rgba(124,92,255,.55);
+  box-shadow:0 0 0 4px rgba(124,92,255,.10), 0 12px 44px rgba(124,92,255,.16);
+}
+.searchbar svg{flex:none; margin-left:9px; color:var(--dim)}
+.searchbar input{
+  flex:1; min-width:0; background:none; border:0; outline:none; color:var(--fg);
+  font:inherit; font-size:14.5px; padding:11px 6px;
+}
+.searchbar input::placeholder{color:var(--dim)}
+
+.btn{
+  flex:none; padding:11px 24px; border-radius:999px; border:1px solid transparent;
+  background:linear-gradient(180deg,var(--violet),#6344e8); color:#fff;
+  font:inherit; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap;
+  box-shadow:0 6px 22px rgba(124,92,255,.34), inset 0 1px 0 rgba(255,255,255,.20);
+  transition:transform .22s var(--ease), box-shadow .22s var(--ease), filter .22s var(--ease);
+}
+.btn:hover:not(:disabled){transform:translateY(-1.5px); box-shadow:0 12px 34px rgba(124,92,255,.46); filter:brightness(1.07)}
+.btn:active:not(:disabled){transform:translateY(0)}
+.btn:disabled{opacity:.5; cursor:not-allowed; box-shadow:none}
+
+.hint{margin-top:20px; font-size:12.5px; color:var(--dim)}
+.hint b{color:var(--muted); font-weight:500; cursor:pointer; border-bottom:1px dashed var(--line-2); padding-bottom:1px}
+.hint b:hover{color:var(--violet-2)}
+
+/* ============ glass cards ============ */
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--r);
+  backdrop-filter:blur(18px) saturate(140%);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+}
+
+/* ============ repo overview ============ */
+.overview{padding:22px 26px; margin-bottom:20px; display:flex; align-items:center;
+          justify-content:space-between; gap:24px; flex-wrap:wrap}
+.repo-id{display:flex; align-items:center; gap:13px; min-width:0}
+.repo-av{width:38px; height:38px; border-radius:10px; flex:none;
+         background:linear-gradient(135deg,rgba(124,92,255,.34),rgba(34,211,238,.20));
+         border:1px solid var(--line); display:grid; place-items:center; color:var(--violet-2)}
+.repo-name{font-size:17px; font-weight:620; letter-spacing:-.02em; overflow:hidden; text-overflow:ellipsis}
+.repo-desc{font-size:12.5px; color:var(--dim); margin-top:2px; max-width:460px;
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.stats{display:flex; gap:30px; flex-wrap:wrap}
+.stat-v{font-size:19px; font-weight:600; letter-spacing:-.02em}
+.stat-l{font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.09em; margin-top:3px}
+
+/* ============ workspace ============ */
+.workspace{display:grid; grid-template-columns:1fr 296px; gap:20px; align-items:start}
+@media(max-width:960px){ .workspace{grid-template-columns:1fr} }
+
+/* ============ tabs ============ */
+.tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px}
+.tab{
+  padding:9px 17px; border-radius:999px; font-size:13.5px; cursor:pointer;
+  background:var(--panel); border:1px solid var(--line); color:var(--muted);
+  transition:all .24s var(--ease); font-family:inherit;
+}
+.tab:hover{color:var(--fg); border-color:var(--line-2); transform:translateY(-1px)}
+.tab.on{
+  color:#fff; border-color:rgba(124,92,255,.55); background:rgba(124,92,255,.17);
+  box-shadow:0 4px 20px rgba(124,92,255,.20);
+}
+
+/* ============ output ============ */
+.output{padding:32px 34px; min-height:340px}
+@media(max-width:600px){ .output{padding:22px 20px} }
+
+/* ============ MCP activity panel ============ */
+.mcp{padding:20px; position:sticky; top:104px}
+.mcp-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
+.mcp-title{font-size:11px; text-transform:uppercase; letter-spacing:.11em; color:var(--dim); font-weight:600}
+.mcp-badge{font-size:10px; padding:3px 9px; border-radius:999px; color:var(--cyan);
+           background:rgba(34,211,238,.11); border:1px solid rgba(34,211,238,.24)}
+
+.step{display:flex; align-items:flex-start; gap:11px; padding:9px 0; position:relative}
+.step + .step::before{
+  content:""; position:absolute; left:8px; top:-9px; height:9px; width:1px;
+  background:var(--line-2);
+}
+.ic{width:17px; height:17px; flex:none; margin-top:1px; border-radius:50%;
+    display:grid; place-items:center; border:1px solid var(--line-2);
+    transition:all .34s var(--ease)}
+.step.pending .ic{background:transparent}
+.step.running .ic{border-color:var(--violet); background:rgba(124,92,255,.18)}
+.step.done .ic{border-color:rgba(52,211,153,.5); background:rgba(52,211,153,.15)}
+.step.error .ic{border-color:rgba(248,113,113,.5); background:rgba(248,113,113,.15)}
+.spinner{width:9px; height:9px; border:1.5px solid rgba(124,92,255,.3);
+         border-top-color:var(--violet); border-radius:50%; animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step-body{min-width:0; flex:1}
+.step-tool{font-size:12.5px; font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+           color:var(--dim); transition:color .3s var(--ease); word-break:break-all}
+.step.running .step-tool{color:var(--violet-2)}
+.step.done .step-tool{color:var(--fg)}
+.step.error .step-tool{color:var(--err)}
+.step-label{font-size:11px; color:var(--dim); margin-top:2px}
+
+/* ============ rendered markdown ============ */
+.md{font-size:14.6px; line-height:1.75; color:#d7dbe6}
+.md h1,.md h2{font-size:19px; font-weight:620; color:#fff; letter-spacing:-.02em;
+              margin:30px 0 12px; padding-bottom:9px; border-bottom:1px solid var(--line)}
+.md h1:first-child,.md h2:first-child{margin-top:0}
+.md h3{font-size:15px; font-weight:600; color:#fff; margin:22px 0 8px}
+.md p{margin:0 0 13px}
+.md ul,.md ol{margin:0 0 13px; padding-left:21px}
+.md li{margin:5px 0}
+.md code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.7px;
+         background:rgba(124,92,255,.13); color:var(--violet-2);
+         padding:2px 6px; border-radius:5px}
+.md pre{background:rgba(0,0,0,.42); border:1px solid var(--line); border-radius:10px;
+        padding:15px; overflow-x:auto; margin:0 0 14px}
+.md pre code{background:none; color:#c8cede; padding:0; font-size:12.4px}
+.md strong{color:#fff; font-weight:600}
+.md a{color:var(--cyan)}
+.md table{width:100%; border-collapse:collapse; margin:0 0 14px; font-size:13px; display:block; overflow-x:auto}
+.md th,.md td{text-align:left; padding:8px 12px; border:1px solid var(--line)}
+.md th{background:rgba(255,255,255,.04); font-weight:600; color:#fff}
+
+/* file tree */
+.tree{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.6px; line-height:1.95}
+.tree div{color:var(--muted); display:flex; gap:9px; align-items:center;
+          padding:1px 0; border-radius:5px}
+.tree div:hover{color:var(--fg)}
+.tree .t-dir{color:var(--violet-2)}
+.tree .t-sz{margin-left:auto; color:var(--dim); font-size:11px}
+
+/* ============ states ============ */
+.empty{display:grid; place-items:center; min-height:290px; text-align:center; gap:13px}
+.empty svg{color:var(--dim); opacity:.45}
+.empty p{color:var(--dim); font-size:13.5px; margin:0; max-width:320px}
+
+.loading{display:flex; flex-direction:column; align-items:center; justify-content:center;
+         min-height:290px; gap:18px; text-align:center}
+.bars{display:flex; gap:5px; height:30px; align-items:flex-end}
+.bars i{width:3px; background:linear-gradient(180deg,var(--violet),var(--cyan));
+        border-radius:2px; animation:bar 1.15s var(--ease) infinite}
+.bars i:nth-child(1){animation-delay:0s} .bars i:nth-child(2){animation-delay:.11s}
+.bars i:nth-child(3){animation-delay:.22s} .bars i:nth-child(4){animation-delay:.33s}
+.bars i:nth-child(5){animation-delay:.44s}
+@keyframes bar{0%,100%{height:7px; opacity:.42} 50%{height:28px; opacity:1}}
+.loading p{margin:0; color:var(--muted); font-size:13.5px}
+.loading small{color:var(--dim); font-size:11.5px}
+
+.alert{padding:15px 17px; border-radius:11px; font-size:13.2px; line-height:1.6;
+       background:rgba(248,113,113,.09); border:1px solid rgba(248,113,113,.26); color:#fca5a5}
+.alert b{display:block; color:#fecaca; margin-bottom:4px; font-weight:600}
+
+/* ============ history / about ============ */
+.panel-pad{padding:30px 32px}
+.h-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px;
+        flex-wrap:wrap; margin-bottom:22px}
+.h-item{display:flex; align-items:center; justify-content:space-between; gap:16px;
+        padding:14px 16px; border-radius:11px; border:1px solid var(--line);
+        background:rgba(255,255,255,.02); margin-bottom:9px; cursor:pointer;
+        transition:all .22s var(--ease)}
+.h-item:hover{border-color:rgba(124,92,255,.4); transform:translateY(-1.5px);
+              background:rgba(124,92,255,.06)}
+.h-name{font-size:14px; font-weight:550}
+.h-meta{font-size:11.5px; color:var(--dim); margin-top:2px}
+
+.about-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:13px; margin-top:22px}
+.about-cell{padding:17px; border-radius:11px; border:1px solid var(--line); background:rgba(255,255,255,.02)}
+.about-cell h4{margin:0 0 6px; font-size:13px; color:#fff; font-weight:600}
+.about-cell p{margin:0; font-size:12.3px; color:var(--muted); line-height:1.6}
+.flow{display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-top:20px;
+      font-size:12px; color:var(--muted); font-family:ui-monospace,Menlo,Consolas,monospace}
+.flow span{padding:7px 13px; border-radius:8px; background:rgba(255,255,255,.04); border:1px solid var(--line)}
+.flow em{color:var(--violet-2); font-style:normal}
+
+/* ============ entrance animation ============ */
+.rise{animation:rise .6s var(--ease) both}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+.d1{animation-delay:.05s}.d2{animation-delay:.11s}.d3{animation-delay:.17s}
+.d4{animation-delay:.23s}.d5{animation-delay:.29s}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important; animation-iteration-count:1 !important;
+                       transition-duration:.001ms !important}
+  .rise{opacity:1; transform:none}
+}
+</style>
+
+<div class="bg"></div><div class="grid"></div>
+
+<nav>
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2 2 7l10 5 10-5-10-5Z" fill="#7c5cff"/>
+      <path d="M2 12l10 5 10-5" stroke="#22d3ee" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 17l10 5 10-5" stroke="#7c5cff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+    </svg>
+    Strata
+  </div>
+  <div class="navlinks">
+    <button id="nav-analyze" class="on" onclick="showView('analyze')">Analyze Repository</button>
+    <button id="nav-history" onclick="showView('history')">History</button>
+    <button id="nav-about" onclick="showView('about')">About</button>
+  </div>
+</nav>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section id="hero" class="hero">
+    <div class="eyebrow rise d1"><span class="dot"></span> Powered by the Model Context Protocol</div>
+    <h1 class="rise d2">Understand Any Codebase.</h1>
+    <p class="sub rise d3">Connect a GitHub repository and let your AI engineering assistant
+       investigate how it works — architecture, dependencies, control flow, and risk.</p>
+
+    <div class="searchbar rise d4">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2 0-.4-.5-1.6.2-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z"/>
+      </svg>
+      <input id="url" placeholder="https://github.com/owner/repository"
+             onkeydown="if(event.key==='Enter')start()">
+      <button class="btn" id="go" onclick="start()">Analyze</button>
+    </div>
+    <p class="hint rise d5">Try
+      <b onclick="fill('modelcontextprotocol/python-sdk')">modelcontextprotocol/python-sdk</b> ·
+      <b onclick="fill('pallets/flask')">pallets/flask</b> ·
+      <b onclick="fill('psf/requests')">psf/requests</b>
+    </p>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="dash" class="hidden">
+    <div class="card overview rise" id="overview"></div>
+
+    <div class="workspace">
+      <div>
+        <div class="tabs rise d1" id="tabs"></div>
+        <div class="card output rise d2" id="out"></div>
+      </div>
+
+      <aside class="card mcp rise d3">
+        <div class="mcp-head">
+          <span class="mcp-title">MCP Activity</span>
+          <span class="mcp-badge" id="mcp-state">idle</span>
+        </div>
+        <div id="steps"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section id="history" class="hidden">
+    <div class="card panel-pad rise">
+      <div class="h-head">
+        <div>
+          <h2 style="margin:0 0 4px;font-size:20px;letter-spacing:-.02em">History</h2>
+          <p style="margin:0;color:var(--muted);font-size:13.5px">Repositories analyzed on this device.</p>
+        </div>
+        <button class="tab" id="h-clear" onclick="clearHistory()">Clear history</button>
+      </div>
+      <div id="h-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="about" class="hidden">
+    <div class="card panel-pad rise">
+      <h2 style="margin:0 0 4px;font-size:20px;letter-spacing:-.02em">About Strata</h2>
+      <p style="margin:0 0 6px;color:var(--muted);font-size:13.5px;max-width:620px">
+        Strata reads a GitHub repository and explains how it is built. Every capability is
+        exposed through a real Model Context Protocol server, so the same tools can be used
+        by this interface, by Claude Desktop, or by any other MCP-compatible client.
+      </p>
+
+      <div class="flow">
+        <span>Web UI</span><em>→</em><span>FastAPI</span><em>→ MCP →</em>
+        <span>Analyst Server</span><em>→</em><span>GitHub + LLM</span>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-cell"><h4>API</h4><p>A service you call. Here: the GitHub REST API and the OpenRouter LLM API.</p></div>
+        <div class="about-cell"><h4>Tool calling</h4><p>A model choosing which function to run, based on a schema it was given.</p></div>
+        <div class="about-cell"><h4>Agent</h4><p>A loop that plans, calls a tool, observes the result, and decides what to do next.</p></div>
+        <div class="about-cell"><h4>MCP</h4><p>The standard that exposes tools so any client can discover and call them the same way.</p></div>
+      </div>
+
+      <h3 style="margin:30px 0 12px;font-size:15px">Tools exposed by the server</h3>
+      <div id="toollist" class="tree"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Present only in the Vercel/static deploy; 404s harmlessly when FastAPI serves this file. -->
+<script src="config.js"></script>
+
+<script>
+// Empty string = same-origin (local dev). config.js overrides it for a split deploy.
+const API = window.STRATA_API_BASE || '';
+
+/* tab id -> [label, mcp tool]. "structure" is rendered from raw file data, no LLM. */
+const TABS = [
+  ['architecture','Architecture','analyze_architecture'],
+  ['structure',   'Structure',    null],
+  ['dependencies','Dependencies', 'analyze_dependencies'],
+  ['codeflow',    'Code Flow',    'analyze_code_flow'],
+  ['issues',      'Potential Issues','detect_potential_issues'],
+  ['report',      'AI Report',    'generate_report'],
+];
+
+let repo = null;            // {owner, repo}
+let active = 'architecture';
+const cache = {};           // tabId -> rendered html
+let files = null;           // list_repo_files result
+let es = null;              // live EventSource
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fill = v => { $('url').value = v; $('url').focus(); };
+
+function parseRepo(v){
+  v = v.trim().replace(/\.git$/,'').replace(/\/+$/,'');
+  const m = v.match(/github\.com[/:]([^/]+)\/([^/?#]+)/i) || v.match(/^([\w.-]+)\/([\w.-]+)$/);
+  return m ? {owner:m[1], repo:m[2]} : null;
+}
+
+/* compact markdown renderer: headings, lists, code, bold, tables */
+function md(t){
+  const blocks = esc(t).split(/```/);
+  return blocks.map((b,i) => {
+    if(i % 2) return `<pre><code>${b.replace(/^\w*\n/,'')}</code></pre>`;
+    return b
+      .replace(/^#{1,2} (.+)$/gm,'<h2>$1</h2>')
+      .replace(/^#{3,6} (.+)$/gm,'<h3>$1</h3>')
+      .replace(/^\s*[-*] (.+)$/gm,'<li>$1</li>')
+      .replace(/^\s*\d+\. (.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g,'<ul>$1</ul>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/^(?!<[hlu])(.+)$/gm,'<p>$1</p>')
+      .replace(/<p>\s*<\/p>/g,'');
+  }).join('');
+}
+
+/* ---------- views ---------- */
+function showView(v){
+  ['hero','dash','history','about'].forEach(x => $(x).classList.add('hidden'));
+  ['analyze','history','about'].forEach(x => $('nav-'+x).classList.remove('on'));
+  if(v === 'analyze'){ $(repo ? 'dash' : 'hero').classList.remove('hidden'); $('nav-analyze').classList.add('on'); }
+  else { $(v).classList.remove('hidden'); $('nav-'+v).classList.add('on'); }
+  if(v === 'history') renderHistory();
+  if(v === 'about')   loadTools();
+}
+
+/* ---------- MCP activity panel ---------- */
+const CHECK = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const CROSS = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+function setSteps(list){
+  $('steps').innerHTML = list.map(s => `
+    <div class="step ${s.status}" data-tool="${s.name}">
+      <div class="ic">${s.status==='done'?CHECK:s.status==='error'?CROSS:s.status==='running'?'<div class="spinner"></div>':''}</div>
+      <div class="step-body">
+        <div class="step-tool">${s.name}</div>
+        <div class="step-label">${s.label||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- main flow ---------- */
+function start(){
+  const p = parseRepo($('url').value);
+  if(!p){
+    $('url').value = '';
+    $('url').placeholder = 'Enter a valid GitHub URL or owner/repo';
+    return;
+  }
+  repo = p;
+  Object.keys(cache).forEach(k => delete cache[k]);
+  files = null;
+  active = 'architecture';
+
+  $('hero').classList.add('hidden');
+  $('dash').classList.remove('hidden');
+  $('overview').innerHTML = `<div class="repo-id">
+      <div class="repo-av"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 12l9 4 9-4"/></svg></div>
+      <div><div class="repo-name">${esc(p.owner)}/${esc(p.repo)}</div>
+      <div class="repo-desc">Connecting to MCP server…</div></div></div>`;
+  renderTabs();
+  run('architecture');
+}
+
+function renderTabs(){
+  $('tabs').innerHTML = TABS.map(([id,label]) =>
+    `<button class="tab ${id===active?'on':''}" onclick="run('${id}')">${label}</button>`).join('');
+}
+
+function run(tabId){
+  active = tabId;
+  renderTabs();
+  if(es){ es.close(); es = null; }
+
+  if(cache[tabId]){ $('out').innerHTML = cache[tabId]; $('mcp-state').textContent = 'cached'; return; }
+
+  if(tabId === 'structure'){
+    if(files) return renderStructure();
+    // structure comes from the architecture pipeline; run it if not fetched yet
+    return runStream('analyze_architecture', 'architecture', true);
+  }
+  const tool = TABS.find(t => t[0] === tabId)[2];
+  runStream(tool, tabId, false);
+}
+
+function runStream(tool, tabId, structureOnly){
+  const steps = [
+    {name:'get_repo_info',      label:'Reading repository metadata', status:'pending'},
+    {name:'get_repo_languages', label:'Detecting languages',         status:'pending'},
+    {name:'list_repo_files',    label:'Listing repository structure',status:'pending'},
+    {name:tool,                 label:'Running AI analysis',         status:'pending'},
+  ];
+  setSteps(steps);
+  $('mcp-state').textContent = 'running';
+  $('out').innerHTML = `<div class="loading">
+      <div class="bars"><i></i><i></i><i></i><i></i><i></i></div>
+      <p>Investigating ${esc(repo.owner)}/${esc(repo.repo)}</p>
+      <small>Reading the repository, then reasoning over it. This can take 20–60 seconds.</small>
+    </div>`;
+
+  const q = new URLSearchParams({owner:repo.owner, repo:repo.repo, tool});
+  es = new EventSource(`${API}/api/analyze/stream?${q}`);
+
+  es.addEventListener('tool', e => {
+    const d = JSON.parse(e.data);
+    const s = steps.find(x => x.name === d.name);
+    if(s) s.status = d.status;
+    setSteps(steps);
+
+    if(d.status === 'done' && d.result){
+      try{
+        if(d.name === 'get_repo_info')      applyOverview(JSON.parse(d.result));
+        if(d.name === 'get_repo_languages') applyLangs(JSON.parse(d.result));
+        if(d.name === 'list_repo_files'){
+          files = d.result.trim().split(/\n(?=\{)/).map(JSON.parse);
+          if(structureOnly){ es.close(); es=null; $('mcp-state').textContent='ready'; renderStructure(); }
+        }
+      }catch(err){ /* non-JSON payload — safe to ignore */ }
+    }
+  });
+
+  es.addEventListener('result', e => {
+    const d = JSON.parse(e.data);
+    cache[tabId] = `<div class="md">${md(d.text)}</div>`;
+    if(active === tabId) $('out').innerHTML = cache[tabId];
+    saveHistory();
+  });
+
+  es.addEventListener('error', e => {
+    let msg = 'The connection to the analysis stream was interrupted.';
+    try{ msg = JSON.parse(e.data).message; }catch(_){}
+    $('out').innerHTML = `<div class="alert"><b>Analysis could not complete</b>${esc(msg)}</div>`;
+    $('mcp-state').textContent = 'error';
+    if(es){ es.close(); es = null; }
+  });
+
+  es.addEventListener('done', () => {
+    $('mcp-state').textContent = 'complete';
+    if(es){ es.close(); es = null; }
+  });
+
+  es.onerror = () => {
+    if(es && es.readyState === 2){
+      $('mcp-state').textContent = 'error';
+      if(!cache[tabId]) $('out').innerHTML =
+        `<div class="alert"><b>Backend unreachable</b>Could not reach the Strata API. Make sure the backend is running.</div>`;
+      es = null;
+    }
+  };
+}
+
+function applyOverview(info){
+  window._info = info;
+  const n = v => v >= 1000 ? (v/1000).toFixed(1).replace(/\.0$/,'') + 'k' : v;
+  $('overview').innerHTML = `
+    <div class="repo-id">
+      <div class="repo-av"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 12l9 4 9-4"/></svg></div>
+      <div style="min-width:0">
+        <div class="repo-name">${esc(info.full_name)}</div>
+        <div class="repo-desc">${esc(info.description || 'No description provided')}</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div><div class="stat-v" id="lang">—</div><div class="stat-l">Language</div></div>
+      <div><div class="stat-v">${n(info.stars)}</div><div class="stat-l">Stars</div></div>
+      <div><div class="stat-v">${n(info.forks)}</div><div class="stat-l">Forks</div></div>
+      <div><div class="stat-v">${n(info.open_issues)}</div><div class="stat-l">Issues</div></div>
+    </div>`;
+}
+
+function applyLangs(langs){
+  const top = Object.entries(langs).sort((a,b) => b[1]-a[1])[0];
+  const el = $('lang');
+  if(el && top) el.textContent = top[0];
+}
+
+function renderStructure(){
+  if(!files) return;
+  const dirs  = files.filter(f => f.type === 'dir').sort((a,b)=>a.name.localeCompare(b.name));
+  const blobs = files.filter(f => f.type !== 'dir').sort((a,b)=>a.name.localeCompare(b.name));
+  const kb = s => s > 1024 ? (s/1024).toFixed(1)+' KB' : s ? s+' B' : '';
+  const row = f => `<div class="${f.type==='dir'?'t-dir':''}">
+      ${f.type==='dir'
+        ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>'
+        : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity=".55"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/></svg>'}
+      ${esc(f.name)}<span class="t-sz">${kb(f.size)}</span></div>`;
+  cache.structure = `<div class="tree">${dirs.map(row).join('')}${blobs.map(row).join('')}</div>`;
+  if(active === 'structure') $('out').innerHTML = cache.structure;
+}
+
+/* ---------- history (localStorage) ---------- */
+function saveHistory(){
+  if(!repo) return;
+  const key = `${repo.owner}/${repo.repo}`;
+  let h = JSON.parse(localStorage.getItem('strata.history') || '[]').filter(x => x.key !== key);
+  h.unshift({key, at:Date.now(), desc:(window._info||{}).description || ''});
+  localStorage.setItem('strata.history', JSON.stringify(h.slice(0,20)));
+}
+
+function clearHistory(){
+  localStorage.removeItem('strata.history');
+  renderHistory();
+}
+
+function renderHistory(){
+  const h = JSON.parse(localStorage.getItem('strata.history') || '[]');
+  $('h-clear').style.display = h.length ? '' : 'none';   // nothing to clear when empty
+  $('h-list').innerHTML = h.length ? h.map(x => `
+    <div class="h-item" onclick="fill('${x.key}');showView('analyze');start()">
+      <div style="min-width:0">
+        <div class="h-name">${esc(x.key)}</div>
+        <div class="h-meta">${esc((x.desc||'').slice(0,74)) || 'Analyzed'} · ${new Date(x.at).toLocaleDateString()}</div>
+      </div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" style="color:var(--dim);flex:none"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`).join('')
+    : `<div class="empty"><p>No repositories analyzed yet.</p></div>`;
+}
+
+/* ---------- about: live MCP tool discovery ---------- */
+async function loadTools(){
+  const el = $('toollist');
+  if(el.dataset.loaded) return;
+  try{
+    const r = await fetch(`${API}/api/tools`);
+    const j = await r.json();
+    el.innerHTML = j.tools.map(t =>
+      `<div><span style="color:var(--violet-2)">${esc(t.name)}</span>
+       <span class="t-sz" style="margin-left:auto;max-width:58%;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+       ${esc((t.description||'').split('\n')[0])}</span></div>`).join('');
+    el.dataset.loaded = '1';
+  }catch(_){
+    el.innerHTML = `<div style="color:var(--dim)">Backend unreachable — start the Strata API to list tools.</div>`;
+  }
+}
+</script>
